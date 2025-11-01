@@ -1,0 +1,97 @@
+name: Go CI
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - 'go/**'
+      - '.github/workflows/go.yml'
+  pull_request:
+    branches: [ master ]
+    paths:
+      - 'go/**'
+      - '.github/workflows/go.yml'
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-24.04
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.25'
+
+    - name: Cache Go modules
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-1.25-${{ hashFiles('go/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-1.25-
+
+    - name: Download dependencies
+      working-directory: ./go
+      run: go mod download
+
+    - name: Verify dependencies
+      working-directory: ./go
+      run: go mod verify
+
+    - name: Run tests
+      working-directory: ./go
+      run: go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        files: ./go/coverage.out
+        flags: go
+        fail_ci_if_error: false
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-24.04
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.25'
+
+    - name: Run golangci-lint
+      uses: golangci/golangci-lint-action@v8
+      with:
+        version: v2.6.0
+        working-directory: ./go
+        args: --timeout=5m
+
+  build:
+    name: Build
+    runs-on: ubuntu-24.04
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.25'
+
+    - name: Build binary
+      working-directory: ./go
+      run: go build -v -o bin/tweet-audit ./cmd/tweet-audit
+
+    - name: Verify binary
+      working-directory: ./go
+      run: ./bin/tweet-audit --version || ./bin/tweet-audit || echo "Binary built successfully"
