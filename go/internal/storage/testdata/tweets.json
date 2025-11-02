@@ -1,0 +1,190 @@
+[
+  {
+    "tweet" : {
+      "edit_info" : {
+        "initial" : {
+          "editTweetIds" : [
+            "1234567890123456789"
+          ],
+          "editableUntil" : "2024-01-15T14:30:00.000Z",
+          "editsRemaining" : "5",
+          "isEditEligible" : true
+        }
+      },
+      "retweeted" : false,
+      "source" : "<a href=\"http://twitter.com/download/iphone\" rel=\"nofollow\">Twitter for iPhone</a>",
+      "entities" : {
+        "hashtags" : [
+          {
+            "text" : "golang",
+            "indices" : [
+              "0",
+              "7"
+            ]
+          }
+        ],
+        "symbols" : [ ],
+        "user_mentions" : [ ],
+        "urls" : [ ]
+      },
+      "display_text_range" : [
+        "0",
+        "85"
+      ],
+      "favorite_count" : "42",
+      "id_str" : "1234567890123456789",
+      "truncated" : false,
+      "retweet_count" : "7",
+      "id" : "1234567890123456789",
+      "possibly_sensitive" : false,
+      "created_at" : "Mon Jan 15 13:30:00 +0000 2024",
+      "favorited" : false,
+      "full_text" : "#golang error handling is growing on me. Explicit is better than implicit after all.",
+      "lang" : "en"
+    }
+  },
+  {
+    "tweet" : {
+      "edit_info" : {
+        "initial" : {
+          "editTweetIds" : [
+            "9876543210987654321"
+          ],
+          "editableUntil" : "2024-02-20T09:15:00.000Z",
+          "editsRemaining" : "5",
+          "isEditEligible" : false
+        }
+      },
+      "retweeted" : false,
+      "source" : "<a href=\"https://mobile.twitter.com\" rel=\"nofollow\">Twitter Web App</a>",
+      "entities" : {
+        "hashtags" : [ ],
+        "symbols" : [ ],
+        "user_mentions" : [
+          {
+            "screen_name" : "randomuser",
+            "name" : "Random User",
+            "id" : "111111111",
+            "id_str" : "111111111",
+            "indices" : [
+              "0",
+              "11"
+            ]
+          }
+        ],
+        "urls" : [
+          {
+            "url" : "https://t.co/abcdef12345",
+            "expanded_url" : "https://example.com/article",
+            "display_url" : "example.com/article",
+            "indices" : [
+              "50",
+              "73"
+            ]
+          }
+        ]
+      },
+      "display_text_range" : [
+        "0",
+        "73"
+      ],
+      "favorite_count" : "156",
+      "id_str" : "9876543210987654321",
+      "truncated" : false,
+      "retweet_count" : "23",
+      "id" : "9876543210987654321",
+      "possibly_sensitive" : false,
+      "created_at" : "Tue Feb 20 08:15:00 +0000 2024",
+      "favorited" : false,
+      "full_text" : "@randomuser Great article on distributed systems! https://t.co/abcdef12345",
+      "lang" : "en"
+    }
+  },
+  {
+    "tweet" : {
+      "edit_info" : {
+        "initial" : {
+          "editTweetIds" : [
+            "5555555555555555555"
+          ],
+          "editableUntil" : "2024-03-10T16:45:00.000Z",
+          "editsRemaining" : "3",
+          "isEditEligible" : true
+        }
+      },
+      "retweeted" : false,
+      "source" : "<a href=\"http://twitter.com/download/android\" rel=\"nofollow\">Twitter for Android</a>",
+      "entities" : {
+        "hashtags" : [
+          {
+            "text" : "TIL",
+            "indices" : [
+              "0",
+              "4"
+            ]
+          },
+          {
+            "text" : "devops",
+            "indices" : [
+              "75",
+              "82"
+            ]
+          }
+        ],
+        "symbols" : [ ],
+        "user_mentions" : [ ],
+        "urls" : [ ]
+      },
+      "display_text_range" : [
+        "0",
+        "120"
+      ],
+      "favorite_count" : "8",
+      "id_str" : "5555555555555555555",
+      "truncated" : false,
+      "retweet_count" : "2",
+      "id" : "5555555555555555555",
+      "possibly_sensitive" : false,
+      "created_at" : "Sun Mar 10 15:45:00 +0000 2024",
+      "favorited" : false,
+      "full_text" : "#TIL you can use Docker BuildKit to cache Go module downloads. Game changer #devops\n\nSpeeds up builds significantly!",
+      "lang" : "en"
+    }
+  },
+  {
+    "tweet" : {
+      "edit_info" : {
+        "initial" : {
+          "editTweetIds" : [
+            "7777777777777777777"
+          ],
+          "editableUntil" : "2024-04-05T11:00:00.000Z",
+          "editsRemaining" : "5",
+          "isEditEligible" : true
+        }
+      },
+      "retweeted" : false,
+      "source" : "<a href=\"http://twitter.com/download/iphone\" rel=\"nofollow\">Twitter for iPhone</a>",
+      "entities" : {
+        "hashtags" : [ ],
+        "symbols" : [ ],
+        "user_mentions" : [ ],
+        "urls" : [ ]
+      },
+      "display_text_range" : [
+        "0",
+        "95"
+      ],
+      "favorite_count" : "201",
+      "id_str" : "7777777777777777777",
+      "truncated" : false,
+      "retweet_count" : "45",
+      "id" : "7777777777777777777",
+      "possibly_sensitive" : false,
+      "created_at" : "Fri Apr 05 10:00:00 +0000 2024",
+      "favorited" : false,
+      "full_text" : "Just finished reading about CQRS and Event Sourcing. Mind blown. Time to rebuild everything...",
+      "lang" : "en"
+    }
+  }
+]

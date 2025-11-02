@@ -1,11 +1,13 @@
 package main
 
-import "fmt"
+import (
+	"log"
 
-func run() {
-	fmt.Println("Welcome to Tweet Audit")
-}
+	"github.com/benx421/tweet-audit/impl/go/cmd/tweet-audit/commands"
+)
 
 func main() {
-	run()
+	if err := commands.Execute(); err != nil {
+		log.Fatal(err)
+	}
 }

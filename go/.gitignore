@@ -22,5 +22,7 @@ go.work
 go.work.sum
 
 # Build artifacts
-tweet-audit
+/tweet-audit
 dist/
+
+data/
