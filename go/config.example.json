@@ -1,0 +1,17 @@
+{
+  "criteria": {
+    "forbidden_words": [
+      "example_profanity1",
+      "example_profanity2"
+    ],
+    "topics_to_exclude": [
+      "Outdated political opinions",
+      "Controversial statements"
+    ],
+    "tone_requirements": [
+      "Professional language only",
+      "No personal attacks or insults"
+    ],
+    "additional_instructions": "Flag any content that could harm professional reputation"
+  }
+}
