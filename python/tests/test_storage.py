@@ -29,7 +29,7 @@ def test_should_raise_error_when_json_file_not_found(tmp_path):
 def test_should_raise_error_when_json_file_invalid(testdata_dir):
     parser = JSONParser(str(testdata_dir / "invalid.json"))
 
-    with pytest.raises(json.JSONDecodeError):
+    with pytest.raises(ValueError, match="Invalid JSON"):
         parser.parse()
 
 
@@ -41,7 +41,7 @@ def test_should_raise_error_when_json_missing_required_fields(tmp_path):
 
     parser = JSONParser(str(file_path))
 
-    with pytest.raises(KeyError):
+    with pytest.raises(ValueError, match="Missing required field"):
         parser.parse()
 
 
@@ -71,7 +71,7 @@ def test_should_raise_error_when_csv_missing_required_columns(tmp_path):
 
     parser = CSVParser(str(invalid_csv))
 
-    with pytest.raises(KeyError):
+    with pytest.raises(ValueError, match="Missing required column"):
         parser.parse()
 
 
@@ -133,14 +133,13 @@ def test_should_set_file_permissions_when_checkpoint_created(tmp_path):
     assert mode == 0o600
 
 
-def test_should_return_zero_when_checkpoint_content_invalid(tmp_path):
+def test_should_raise_error_when_checkpoint_content_invalid(tmp_path):
     checkpoint_path = tmp_path / "invalid.txt"
     checkpoint_path.write_text("not a number")
 
     with Checkpoint(str(checkpoint_path)) as cp:
-        value = cp.load()
-
-    assert value == 0
+        with pytest.raises(ValueError, match="Corrupted checkpoint"):
+            cp.load()
 
 
 def test_should_raise_error_when_checkpoint_used_outside_context():

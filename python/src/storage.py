@@ -1,12 +1,9 @@
 import csv
 import json
-import logging
 import os
 from abc import ABC, abstractmethod
 
 from models import AnalysisResult, Tweet
-
-logger = logging.getLogger(__name__)
 
 PRIVATE_FILE_MODE = 0o600  # Owner read/write only
 PRIVATE_DIR_MODE = 0o750  # Owner read/write/execute, group read/execute
@@ -43,17 +40,21 @@ class JSONParser(Parser):
         try:
             with open(self.file_path, encoding=FILE_ENCODING) as file:
                 data = json.load(file)
-                tweets = [
+                return [
                     Tweet(
                         id=item[TWITTER_ARCHIVE_ID_FIELD], content=item[TWITTER_ARCHIVE_TEXT_FIELD]
                     )
                     for item in data
                 ]
-
-            return tweets
-        except (FileNotFoundError, json.JSONDecodeError, KeyError) as e:
-            logger.error(f"Error parsing JSON file {self.file_path}: {e}")
-            raise
+        except FileNotFoundError as e:
+            raise FileNotFoundError(f"Tweet archive not found: {self.file_path}") from e
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Invalid JSON in {self.file_path}: {e}") from e
+        except KeyError as e:
+            raise ValueError(
+                f"Missing required field {e} in {self.file_path}. "
+                f"Expected fields: {TWITTER_ARCHIVE_ID_FIELD}, {TWITTER_ARCHIVE_TEXT_FIELD}"
+            ) from e
 
 
 class CSVParser(Parser):
@@ -64,15 +65,19 @@ class CSVParser(Parser):
         try:
             with open(self.file_path, encoding=FILE_ENCODING) as file:
                 reader = csv.DictReader(file)
-                tweets = [
+                return [
                     Tweet(id=row[TWEET_CSV_ID_COLUMN], content=row[TWEET_CSV_TEXT_COLUMN])
                     for row in reader
                 ]
-
-            return tweets
-        except (FileNotFoundError, csv.Error, KeyError) as e:
-            logger.error(f"Error parsing CSV file {self.file_path}: {e}")
-            raise
+        except FileNotFoundError as e:
+            raise FileNotFoundError(f"CSV file not found: {self.file_path}") from e
+        except KeyError as e:
+            raise ValueError(
+                f"Missing required column {e} in {self.file_path}. "
+                f"Expected columns: {TWEET_CSV_ID_COLUMN}, {TWEET_CSV_TEXT_COLUMN}"
+            ) from e
+        except csv.Error as e:
+            raise ValueError(f"Invalid CSV format in {self.file_path}: {e}") from e
 
 
 class Checkpoint:
@@ -81,7 +86,6 @@ class Checkpoint:
         self.file = None
 
     def __enter__(self) -> "Checkpoint":
-        # Create directory if needed
         dir_path = os.path.dirname(self.path)
         if dir_path:
             os.makedirs(dir_path, mode=PRIVATE_DIR_MODE, exist_ok=True)
@@ -99,25 +103,28 @@ class Checkpoint:
     def load(self) -> int:
         if not self.file:
             raise RuntimeError("Checkpoint file is not open")
-        try:
-            self.file.seek(0)
-            content = self.file.read().strip()
-            return int(content) if content else 0
-        except ValueError as e:
-            logger.warning(f"Could not load checkpoint {self.path}: {e}")
+
+        self.file.seek(0)
+        content = self.file.read().strip()
+
+        if not content:
             return 0
+
+        try:
+            return int(content)
+        except ValueError as e:
+            raise ValueError(
+                f"Corrupted checkpoint file {self.path}: expected integer, got '{content}'"
+            ) from e
 
     def save(self, tweet_index: int) -> None:
         if not self.file:
             raise RuntimeError("Checkpoint file is not open")
-        try:
-            self.file.seek(0)
-            self.file.truncate()
-            self.file.write(str(tweet_index))
-            self.file.flush()
-        except OSError as e:
-            logger.error(f"Error saving checkpoint {self.path}: {e}")
-            raise
+
+        self.file.seek(0)
+        self.file.truncate()
+        self.file.write(str(tweet_index))
+        self.file.flush()
 
 
 class CSVWriter:
@@ -126,26 +133,22 @@ class CSVWriter:
         self.append = append
         self.file = None
         self.writer = None
-        self.skip_header = False
+        self.header_written = False
 
     def __enter__(self) -> "CSVWriter":
-        try:
-            dir_path = os.path.dirname(self.file_path)
-            if dir_path:
-                os.makedirs(dir_path, mode=PRIVATE_DIR_MODE, exist_ok=True)
+        dir_path = os.path.dirname(self.file_path)
+        if dir_path:
+            os.makedirs(dir_path, mode=PRIVATE_DIR_MODE, exist_ok=True)
 
-            file_exists = os.path.exists(self.file_path)
-            self.skip_header = self.append and file_exists
+        file_exists = os.path.exists(self.file_path)
+        self.header_written = self.append and file_exists
 
-            mode = "a" if self.append and file_exists else "w"
-            self.file = open(self.file_path, mode, encoding=FILE_ENCODING, newline="")
-            self.writer = csv.writer(self.file)
+        mode = "a" if self.append and file_exists else "w"
+        self.file = open(self.file_path, mode, encoding=FILE_ENCODING, newline="")
+        self.writer = csv.writer(self.file)
 
-            os.chmod(self.file_path, PRIVATE_FILE_MODE)
-            return self
-        except OSError as e:
-            logger.error(f"Error opening CSV writer {self.file_path}: {e}")
-            raise
+        os.chmod(self.file_path, PRIVATE_FILE_MODE)
+        return self
 
     def __exit__(self, exc_type, exc_value, traceback) -> bool:
         if self.file:
@@ -157,27 +160,22 @@ class CSVWriter:
     def write_tweets(self, tweets: list[Tweet]) -> None:
         if not self.writer:
             raise RuntimeError("CSVWriter is not open")
-        try:
-            if not self.skip_header:
-                self.writer.writerow([TWEET_CSV_ID_COLUMN, TWEET_CSV_TEXT_COLUMN])
 
-            for tweet in tweets:
-                self.writer.writerow([tweet.id, tweet.content])
-        except (csv.Error, OSError) as e:
-            logger.error(f"Error writing tweets to {self.file_path}: {e}")
-            raise
+        if not self.header_written:
+            self.writer.writerow([TWEET_CSV_ID_COLUMN, TWEET_CSV_TEXT_COLUMN])
+            self.header_written = True
+
+        for tweet in tweets:
+            self.writer.writerow([tweet.id, tweet.content])
 
     def write_result(self, result: AnalysisResult) -> None:
         if not self.writer:
             raise RuntimeError("CSVWriter is not open")
-        try:
-            if not self.skip_header:
-                self.writer.writerow([RESULT_CSV_URL_COLUMN, RESULT_CSV_DELETED_COLUMN])
-                self.skip_header = True
 
-            deleted = CSV_BOOL_TRUE if result.should_delete else CSV_BOOL_FALSE
-            self.writer.writerow([result.tweet_url, deleted])
-            self.file.flush()
-        except (csv.Error, OSError) as e:
-            logger.error(f"Error writing result to {self.file_path}: {e}")
-            raise
+        if not self.header_written:
+            self.writer.writerow([RESULT_CSV_URL_COLUMN, RESULT_CSV_DELETED_COLUMN])
+            self.header_written = True
+
+        deleted = CSV_BOOL_TRUE if result.should_delete else CSV_BOOL_FALSE
+        self.writer.writerow([result.tweet_url, deleted])
+        self.file.flush()
