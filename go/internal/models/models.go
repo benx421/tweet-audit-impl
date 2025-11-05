@@ -7,6 +7,7 @@ type AnalysisResult struct {
 	ShouldDelete bool // True if tweet should be flagged for deletion
 }
 
+// Tweet represents a single tweet from the Twitter archive.
 type Tweet struct {
 	ID   string `json:"id_str"`
 	Text string `json:"full_text"`

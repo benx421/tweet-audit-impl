@@ -17,6 +17,7 @@ const privateFileMode os.FileMode = 0o600
 // Used for directories containing sensitive data files.
 const privateDirMode os.FileMode = 0o750
 
+// WriterOptions configures CSV writer behavior.
 type WriterOptions struct {
 	Path         string
 	ShouldAppend bool
@@ -29,6 +30,7 @@ type CSVWriter struct {
 	skipHeader bool
 }
 
+// NewCSVWriter creates a CSV writer with the specified options.
 func NewCSVWriter(options WriterOptions) (*CSVWriter, error) {
 	cleanedPath := filepath.Clean(options.Path)
 	dir := filepath.Dir(cleanedPath)
@@ -61,6 +63,8 @@ func NewCSVWriter(options WriterOptions) (*CSVWriter, error) {
 	}, nil
 }
 
+// WriteTweets writes a batch of tweets to CSV and closes the file.
+// This is used during the extract phase to export tweets from the archive.
 func (w *CSVWriter) WriteTweets(tweets []models.Tweet) (err error) {
 	defer func() {
 		if closeErr := w.Close(); closeErr != nil && err == nil {
@@ -85,7 +89,8 @@ func (w *CSVWriter) WriteTweets(tweets []models.Tweet) (err error) {
 }
 
 // WriteResult writes a single analysis result without closing the file.
-// It is used for incremental writes with checkpointing.
+// It is used for incremental writes with checkpointing during analysis.
+// The deleted column defaults to "false" (user hasn't deleted yet).
 func (w *CSVWriter) WriteResult(result models.AnalysisResult) (err error) {
 	if !w.skipHeader {
 		if err := w.formatter.Write([]string{"tweet_url", "deleted"}); err != nil {
@@ -104,6 +109,7 @@ func (w *CSVWriter) WriteResult(result models.AnalysisResult) (err error) {
 	return w.formatter.Error()
 }
 
+// Close flushes buffered data and closes the CSV writer.
 func (w *CSVWriter) Close() error {
 	if w.writer == nil {
 		return nil

@@ -11,12 +11,15 @@ import (
 	"github.com/benx421/tweet-audit/impl/go/internal/storage"
 )
 
+// Application orchestrates tweet extraction and analysis workflows.
+// It coordinates the parser, analyzer, writer, and checkpoint components.
 type Application struct {
 	gemini     *analyzer.Gemini
 	cfg        *config.Settings
 	checkpoint *storage.Checkpoint
 }
 
+// New creates an Application with configuration, Gemini analyzer, and checkpoint.
 func New() (*Application, error) {
 	cfg := config.New()
 	gemini, err := analyzer.New(cfg)
@@ -31,6 +34,8 @@ func New() (*Application, error) {
 	}, nil
 }
 
+// ExtractTweets parses the Twitter archive JSON and exports tweets to CSV format.
+// This is the first step in the workflow, transforming raw archive data into a processable format.
 func (a *Application) ExtractTweets() error {
 	parser, err := storage.NewParser(a.cfg.TweetsArchivePath, storage.ParserTypeJSON)
 	if err != nil {
@@ -58,6 +63,9 @@ func (a *Application) ExtractTweets() error {
 	return nil
 }
 
+// AnalyzeTweets processes one batch of tweets using the Gemini analyzer.
+// It resumes from the last checkpoint, analyzes BatchSize tweets, writes flagged results,
+// and saves progress.
 func (a *Application) AnalyzeTweets() error {
 	tweets, err := a.parseTransformedTweets()
 	if err != nil {

@@ -12,11 +12,14 @@ import (
 	"github.com/benx421/tweet-audit/impl/go/internal/models"
 )
 
+// ParserType represents the format of the input file to be parsed.
 type ParserType string
 
 const (
+	// ParserTypeJSON indicates JSON archive format from Twitter.
 	ParserTypeJSON ParserType = "json"
-	ParserTypeCSV  ParserType = "csv"
+	// ParserTypeCSV indicates CSV format for transformed tweets.
+	ParserTypeCSV ParserType = "csv"
 )
 
 func (t ParserType) isValid() bool {
@@ -41,6 +44,8 @@ type Parser struct {
 	parserType ParserType
 }
 
+// NewParser creates a Parser for the specified file path and format.
+// The file is opened immediately and must be closed via Parse().
 func NewParser(path string, parserType ParserType) (*Parser, error) {
 	if !parserType.isValid() {
 		msg := fmt.Sprintf("invalid parserType: %s", parserType.String())
@@ -59,6 +64,8 @@ func NewParser(path string, parserType ParserType) (*Parser, error) {
 	}, nil
 }
 
+// Parse reads and parses tweets from the input file.
+// The file is automatically closed when parsing completes.
 func (p *Parser) Parse() ([]models.Tweet, error) {
 	//nolint:errcheck // defer close, error is not actionable
 	defer p.close()

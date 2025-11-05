@@ -12,10 +12,18 @@ const (
 	analyzeTweetsCommand = "analyze-tweets"
 )
 
+// Execute runs the tweet-audit CLI application.
+// It parses command-line arguments and routes to extract-tweets or analyze-tweets commands.
 func Execute() error {
 	if len(os.Args) < 2 {
 		printUsage()
 		return nil
+	}
+
+	cmd := os.Args[1]
+
+	if cmd != extractTweetsCommand && cmd != analyzeTweetsCommand {
+		return fmt.Errorf("unknown command: %s", cmd)
 	}
 
 	application, err := app.New()
@@ -24,7 +32,6 @@ func Execute() error {
 		return err
 	}
 
-	cmd := os.Args[1]
 	switch cmd {
 	case extractTweetsCommand:
 		fmt.Println("Extracting tweets from archive...")
