@@ -26,7 +26,7 @@ func (a *genaiClientAdapter) GenerateContent(ctx context.Context, model string, 
 // Gemini analyzes tweets against user-defined criteria.
 type Gemini struct {
 	client geminiClient
-	cfg    config.Settings
+	cfg    *config.Settings
 }
 
 type geminiResponse struct {
@@ -35,8 +35,7 @@ type geminiResponse struct {
 }
 
 // New creates a Gemini analyzer. Requires GEMINI_API_KEY environment variable.
-func New() (*Gemini, error) {
-	cfg := config.New()
+func New(cfg *config.Settings) (*Gemini, error) {
 	apiClient, err := genai.NewClient(context.Background(), &genai.ClientConfig{
 		APIKey:  cfg.GeminiAPIKey,
 		Backend: genai.BackendGeminiAPI})
@@ -55,7 +54,11 @@ func New() (*Gemini, error) {
 func (g *Gemini) Analyze(ctx context.Context, tweet *models.Tweet) (models.AnalysisResult, error) {
 	prompt := g.buildPrompt(tweet)
 
-	resp, err := g.client.GenerateContent(ctx, g.cfg.GeminiModel, genai.Text(prompt), nil)
+	genConfig := &genai.GenerateContentConfig{
+		ResponseMIMEType: "application/json",
+	}
+
+	resp, err := g.client.GenerateContent(ctx, g.cfg.GeminiModel, genai.Text(prompt), genConfig)
 	if err != nil {
 		return models.AnalysisResult{}, err
 	}
@@ -68,7 +71,7 @@ func (g *Gemini) Analyze(ctx context.Context, tweet *models.Tweet) (models.Analy
 
 	var geminiResp geminiResponse
 	if err := json.Unmarshal([]byte(responseText), &geminiResp); err != nil {
-		return models.AnalysisResult{}, err
+		return models.AnalysisResult{}, fmt.Errorf("failed to parse Gemini response: %w (response: %s)", err, responseText)
 	}
 
 	shouldDelete := strings.EqualFold(geminiResp.Decision, "DELETE")
@@ -93,7 +96,7 @@ func (g *Gemini) buildPrompt(tweet *models.Tweet) string {
 		idx++
 	}
 	if len(g.cfg.Criteria.ForbiddenWords) > 0 {
-		fmt.Fprintf(&criteriaList, "%d. Contains forbidden words: %v\n", idx, g.cfg.Criteria.ForbiddenWords)
+		fmt.Fprintf(&criteriaList, "%d. Contains any of these words: %s\n", idx, strings.Join(g.cfg.Criteria.ForbiddenWords, ", "))
 	}
 
 	additionalInstructions := ""

@@ -63,7 +63,7 @@ func NewCSVWriter(options WriterOptions) (*CSVWriter, error) {
 
 func (w *CSVWriter) WriteTweets(tweets []models.Tweet) (err error) {
 	defer func() {
-		if closeErr := w.close(); closeErr != nil && err == nil {
+		if closeErr := w.Close(); closeErr != nil && err == nil {
 			err = closeErr
 		}
 	}()
@@ -74,8 +74,8 @@ func (w *CSVWriter) WriteTweets(tweets []models.Tweet) (err error) {
 		}
 	}
 
-	for _, result := range tweets {
-		record := []string{result.ID, result.Text}
+	for _, tweet := range tweets {
+		record := []string{tweet.ID, tweet.Text}
 		if err := w.formatter.Write(record); err != nil {
 			return err
 		}
@@ -84,7 +84,27 @@ func (w *CSVWriter) WriteTweets(tweets []models.Tweet) (err error) {
 	return nil
 }
 
-func (w *CSVWriter) close() error {
+// WriteResult writes a single analysis result without closing the file.
+// It is used for incremental writes with checkpointing.
+func (w *CSVWriter) WriteResult(result models.AnalysisResult) (err error) {
+	if !w.skipHeader {
+		if err := w.formatter.Write([]string{"tweet_url", "deleted"}); err != nil {
+			return err
+		}
+		w.skipHeader = true
+	}
+
+	record := []string{result.TweetURL, "false"}
+
+	if err := w.formatter.Write(record); err != nil {
+		return err
+	}
+
+	w.formatter.Flush()
+	return w.formatter.Error()
+}
+
+func (w *CSVWriter) Close() error {
 	if w.writer == nil {
 		return nil
 	}

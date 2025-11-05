@@ -26,18 +26,12 @@ func (m *mockGeminiClient) GenerateContent(ctx context.Context, model string, co
 }
 
 func TestNew(t *testing.T) {
-	originalAPIKey := os.Getenv("GEMINI_API_KEY")
-	defer func() {
-		if err := os.Setenv("GEMINI_API_KEY", originalAPIKey); err != nil {
-			t.Errorf("failed to restore GEMINI_API_KEY: %v", err)
-		}
-	}()
-
 	if err := os.Setenv("GEMINI_API_KEY", "test-api-key"); err != nil {
 		t.Fatalf("failed to set GEMINI_API_KEY: %v", err)
 	}
 
-	analyzer, err := New()
+	cfg := config.New()
+	analyzer, err := New(cfg)
 	if err != nil {
 		t.Fatalf("New() failed: %v", err)
 	}
@@ -52,7 +46,7 @@ func TestNew(t *testing.T) {
 
 func TestBuildPrompt(t *testing.T) {
 	g := &Gemini{
-		cfg: config.Settings{
+		cfg: &config.Settings{
 			Criteria: config.Criteria{
 				ForbiddenWords: []string{"badword1", "badword2"},
 				TopicsToExclude: []string{
@@ -102,7 +96,7 @@ func TestBuildPrompt(t *testing.T) {
 
 func TestBuildPromptEmptyCriteria(t *testing.T) {
 	g := &Gemini{
-		cfg: config.Settings{
+		cfg: &config.Settings{
 			Criteria: config.Criteria{
 				ForbiddenWords:         []string{},
 				TopicsToExclude:        []string{},
@@ -226,7 +220,7 @@ func TestAnalyze(t *testing.T) {
 
 			g := &Gemini{
 				client: mockClient,
-				cfg: config.Settings{
+				cfg: &config.Settings{
 					BaseTwitterURL: "https://x.com",
 					XUsername:      "testuser",
 					GeminiModel:    "gemini-2.0-flash-exp",

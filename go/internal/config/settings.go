@@ -16,29 +16,31 @@ type Criteria struct {
 
 // Settings holds configuration for the tweet audit tool.
 type Settings struct {
-	TweetsArchivePath    string
-	ProcessedTweetsPath  string
-	ProcessedResultsPath string
-	BaseTwitterURL       string
-	XUsername            string
-	GeminiAPIKey         string
-	GeminiModel          string
-	Criteria             Criteria
-	BatchSize            int
+	TweetsArchivePath     string
+	TransformedTweetsPath string
+	CheckpointPath        string
+	ProcessedResultsPath  string
+	BaseTwitterURL        string
+	XUsername             string
+	GeminiAPIKey          string
+	GeminiModel           string
+	Criteria              Criteria
+	BatchSize             int
 }
 
 // New creates a Settings instance.
-func New() Settings {
+func New() *Settings {
 	settings := Settings{
-		TweetsArchivePath:    "data/tweets/tweets.json",
-		ProcessedTweetsPath:  "data/tweets/processed/tweets.csv",
-		ProcessedResultsPath: "data/tweets/processed/results.csv",
-		BaseTwitterURL:       "https://x.com",
-		XUsername:            loadFromEnv("X_USERNAME", "Benn_X1"),
-		GeminiAPIKey:         loadFromEnv("GEMINI_API_KEY", ""),
-		GeminiModel:          loadFromEnv("GEMINI_MODEL", "gemini-2.0-flash-exp"),
-		BatchSize:            1000,
-		Criteria:             defaultCriteria(),
+		TweetsArchivePath:     "data/tweets/tweets.json",
+		TransformedTweetsPath: "data/tweets/transformed/tweets.csv",
+		CheckpointPath:        "data/checkpoint.txt",
+		ProcessedResultsPath:  "data/tweets/processed/results.csv",
+		BaseTwitterURL:        "https://x.com",
+		XUsername:             loadFromEnv("X_USERNAME", "Benn_X1"),
+		GeminiAPIKey:          loadFromEnv("GEMINI_API_KEY", ""),
+		GeminiModel:           loadFromEnv("GEMINI_MODEL", "gemini-2.5-flash"),
+		BatchSize:             10,
+		Criteria:              defaultCriteria(),
 	}
 
 	if cfg := loadConfigFile("config.json"); cfg != nil {
@@ -50,7 +52,7 @@ func New() Settings {
 		}
 	}
 
-	return settings
+	return &settings
 }
 
 func defaultCriteria() Criteria {

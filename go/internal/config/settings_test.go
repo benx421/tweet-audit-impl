@@ -103,7 +103,7 @@ func TestNew(t *testing.T) {
 			envAPIKey:    "",
 			envModel:     "",
 			wantUsername: "Benn_X1",
-			wantModel:    "gemini-2.0-flash-exp",
+			wantModel:    "gemini-2.5-flash",
 		},
 	}
 

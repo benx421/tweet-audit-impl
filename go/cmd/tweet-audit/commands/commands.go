@@ -9,6 +9,7 @@ import (
 
 const (
 	extractTweetsCommand = "extract-tweets"
+	analyzeTweetsCommand = "analyze-tweets"
 )
 
 func Execute() error {
@@ -17,7 +18,11 @@ func Execute() error {
 		return nil
 	}
 
-	application := app.New()
+	application, err := app.New()
+	if err != nil {
+		fmt.Println()
+		return err
+	}
 
 	cmd := os.Args[1]
 	switch cmd {
@@ -31,6 +36,16 @@ func Execute() error {
 		fmt.Println("Successfully extracted tweets")
 		return nil
 
+	case analyzeTweetsCommand:
+		fmt.Println("Analyzing tweets...")
+
+		if err := application.AnalyzeTweets(); err != nil {
+			return fmt.Errorf("analysis failed: %w", err)
+		}
+
+		fmt.Println("Analysis complete!")
+		return nil
+
 	default:
 		return fmt.Errorf("unknown command: %s", cmd)
 	}
@@ -40,4 +55,5 @@ func printUsage() {
 	fmt.Println("Usage: tweet-audit <command>")
 	fmt.Println("\nCommands:")
 	fmt.Println("  extract-tweets  Extract tweets from Twitter archive")
+	fmt.Println("  analyze-tweets  Analyze tweets using Gemini AI")
 }
