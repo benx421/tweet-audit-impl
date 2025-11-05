@@ -1,0 +1,87 @@
+name: Python CI
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - 'python/**'
+      - '.github/workflows/python.yml'
+  pull_request:
+    branches: [ master ]
+    paths:
+      - 'python/**'
+      - '.github/workflows/python.yml'
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-24.04
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: 2.1.1
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+
+    - name: Cache Poetry dependencies
+      uses: actions/cache@v4
+      with:
+        path: python/.venv
+        key: ${{ runner.os }}-poetry-3.11-${{ hashFiles('python/poetry.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-poetry-3.11-
+
+    - name: Install dependencies
+      working-directory: ./python
+      run: poetry install --no-interaction
+
+    - name: Run tests
+      working-directory: ./python
+      run: poetry run pytest --cov --cov-report=xml
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        files: ./python/coverage.xml
+        flags: python
+        fail_ci_if_error: false
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-24.04
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: 2.1.1
+
+    - name: Install dependencies
+      working-directory: ./python
+      run: poetry install --no-interaction
+
+    - name: Run ruff linting
+      working-directory: ./python
+      run: poetry run ruff check .
+
+    - name: Check formatting
+      working-directory: ./python
+      run: poetry run ruff format --check .
