@@ -11,10 +11,15 @@ import (
 	"github.com/benx421/tweet-audit/impl/go/internal/storage"
 )
 
+// TweetAnalyzer analyzes tweets against configured criteria.
+type TweetAnalyzer interface {
+	Analyze(ctx context.Context, tweet *models.Tweet) (models.AnalysisResult, error)
+}
+
 // Application orchestrates tweet extraction and analysis workflows.
 // It coordinates the parser, analyzer, writer, and checkpoint components.
 type Application struct {
-	gemini     *analyzer.Gemini
+	gemini     TweetAnalyzer
 	cfg        *config.Settings
 	checkpoint *storage.Checkpoint
 }

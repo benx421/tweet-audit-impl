@@ -28,7 +28,6 @@ func Execute() error {
 
 	application, err := app.New()
 	if err != nil {
-		fmt.Println()
 		return err
 	}
 

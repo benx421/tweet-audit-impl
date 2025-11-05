@@ -9,6 +9,7 @@ import (
 
 	"github.com/benx421/tweet-audit/impl/go/internal/config"
 	"github.com/benx421/tweet-audit/impl/go/internal/models"
+	"github.com/benx421/tweet-audit/impl/go/internal/storage"
 )
 
 type mockAnalyzer struct {
@@ -43,9 +44,9 @@ func setupTestApp(t *testing.T, cfg *config.Settings, analyzer *mockAnalyzer) *A
 	}
 
 	return &Application{
-		gemini:     nil, // Will use mock
+		gemini:     nil, // Will be set by caller if needed
 		cfg:        cfg,
-		checkpoint: nil, // Will create as needed
+		checkpoint: storage.NewCheckpoint(cfg.CheckpointPath),
 	}
 }
 
@@ -180,5 +181,168 @@ func TestParseTransformedTweets_MalformedCSV(t *testing.T) {
 	_, err := app.parseTransformedTweets()
 	if err == nil {
 		t.Error("parseTransformedTweets() with malformed CSV should return error")
+	}
+}
+
+func TestAnalyzeTweets_Success(t *testing.T) {
+	tmpDir := t.TempDir()
+	csvPath := filepath.Join(tmpDir, "tweets.csv")
+	csvContent := "id,text\n123,Good tweet\n456,Bad tweet with crypto\n789,Another good tweet\n"
+	if err := os.WriteFile(csvPath, []byte(csvContent), 0o600); err != nil {
+		t.Fatalf("failed to create test CSV: %v", err)
+	}
+
+	checkpointPath := filepath.Join(tmpDir, "checkpoint.txt")
+	resultsPath := filepath.Join(tmpDir, "results.csv")
+
+	cfg := &config.Settings{
+		TransformedTweetsPath: csvPath,
+		CheckpointPath:        checkpointPath,
+		ProcessedResultsPath:  resultsPath,
+		BaseTwitterURL:        "https://x.com",
+		XUsername:             "testuser",
+		BatchSize:             2,
+	}
+
+	callCount := 0
+	mockAnalyzer := &mockAnalyzer{
+		analyzeFunc: func(ctx context.Context, tweet *models.Tweet) (models.AnalysisResult, error) {
+			callCount++
+			shouldDelete := tweet.ID == "456" // Flag the "crypto" tweet
+			return models.AnalysisResult{
+				TweetID:      tweet.ID,
+				TweetURL:     cfg.BaseTwitterURL + "/" + cfg.XUsername + "/status/" + tweet.ID,
+				ShouldDelete: shouldDelete,
+			}, nil
+		},
+	}
+
+	app := setupTestApp(t, cfg, mockAnalyzer)
+	app.gemini = mockAnalyzer
+
+	if err := app.AnalyzeTweets(); err != nil {
+		t.Fatalf("AnalyzeTweets() failed: %v", err)
+	}
+
+	if callCount != 2 {
+		t.Errorf("Expected 2 tweets analyzed, got %d", callCount)
+	}
+
+	checkpointData, err := os.ReadFile(checkpointPath)
+	if err != nil {
+		t.Fatalf("failed to read checkpoint: %v", err)
+	}
+	if string(checkpointData) != "2" {
+		t.Errorf("Expected checkpoint value '2', got '%s'", string(checkpointData))
+	}
+
+	resultsData, err := os.ReadFile(resultsPath)
+	if err != nil {
+		t.Fatalf("failed to read results: %v", err)
+	}
+	resultsStr := string(resultsData)
+	if !strings.Contains(resultsStr, "456") {
+		t.Error("Results CSV should contain flagged tweet ID 456")
+	}
+	if strings.Contains(resultsStr, "123") {
+		t.Error("Results CSV should not contain unflagged tweet ID 123")
+	}
+}
+
+func TestAnalyzeTweets_ResumesFromCheckpoint(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	csvPath := filepath.Join(tmpDir, "tweets.csv")
+	csvContent := "id,text\n100,Tweet 1\n200,Tweet 2\n300,Tweet 3\n400,Tweet 4\n"
+	if err := os.WriteFile(csvPath, []byte(csvContent), 0o600); err != nil {
+		t.Fatalf("failed to create test CSV: %v", err)
+	}
+
+	checkpointPath := filepath.Join(tmpDir, "checkpoint.txt")
+	if err := os.WriteFile(checkpointPath, []byte("2"), 0o600); err != nil {
+		t.Fatalf("failed to create checkpoint: %v", err)
+	}
+
+	resultsPath := filepath.Join(tmpDir, "results.csv")
+
+	cfg := &config.Settings{
+		TransformedTweetsPath: csvPath,
+		CheckpointPath:        checkpointPath,
+		ProcessedResultsPath:  resultsPath,
+		BaseTwitterURL:        "https://x.com",
+		XUsername:             "testuser",
+		BatchSize:             2,
+	}
+
+	var processedIDs []string
+	mockAnalyzer := &mockAnalyzer{
+		analyzeFunc: func(ctx context.Context, tweet *models.Tweet) (models.AnalysisResult, error) {
+			processedIDs = append(processedIDs, tweet.ID)
+			return models.AnalysisResult{
+				TweetID:      tweet.ID,
+				TweetURL:     "https://x.com/testuser/status/" + tweet.ID,
+				ShouldDelete: false,
+			}, nil
+		},
+	}
+
+	app := setupTestApp(t, cfg, mockAnalyzer)
+	app.gemini = mockAnalyzer
+
+	if err := app.AnalyzeTweets(); err != nil {
+		t.Fatalf("AnalyzeTweets() failed: %v", err)
+	}
+
+	if len(processedIDs) != 2 {
+		t.Fatalf("Expected 2 tweets processed, got %d", len(processedIDs))
+	}
+	if processedIDs[0] != "300" || processedIDs[1] != "400" {
+		t.Errorf("Expected IDs [300, 400], got %v", processedIDs)
+	}
+
+	checkpointData, err := os.ReadFile(checkpointPath)
+	if err != nil {
+		t.Fatalf("failed to read checkpoint: %v", err)
+	}
+	if string(checkpointData) != "4" {
+		t.Errorf("Expected checkpoint value '4', got '%s'", string(checkpointData))
+	}
+}
+
+func TestAnalyzeTweets_ErrorDuringAnalysis(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	csvPath := filepath.Join(tmpDir, "tweets.csv")
+	csvContent := "id,text\n123,Tweet 1\n456,Tweet 2\n"
+	if err := os.WriteFile(csvPath, []byte(csvContent), 0o600); err != nil {
+		t.Fatalf("failed to create test CSV: %v", err)
+	}
+
+	checkpointPath := filepath.Join(tmpDir, "checkpoint.txt")
+	resultsPath := filepath.Join(tmpDir, "results.csv")
+
+	cfg := &config.Settings{
+		TransformedTweetsPath: csvPath,
+		CheckpointPath:        checkpointPath,
+		ProcessedResultsPath:  resultsPath,
+		BatchSize:             10,
+	}
+
+	mockAnalyzer := &mockAnalyzer{
+		analyzeFunc: func(ctx context.Context, tweet *models.Tweet) (models.AnalysisResult, error) {
+			return models.AnalysisResult{}, os.ErrPermission
+		},
+	}
+
+	app := setupTestApp(t, cfg, mockAnalyzer)
+	app.gemini = mockAnalyzer
+
+	err := app.AnalyzeTweets()
+	if err == nil {
+		t.Fatal("AnalyzeTweets() should return error when analysis fails")
+	}
+
+	if _, err := os.Stat(checkpointPath); err == nil {
+		t.Error("Checkpoint should not exist when analysis fails")
 	}
 }
