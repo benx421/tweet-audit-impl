@@ -42,7 +42,8 @@ class JSONParser(Parser):
                 data = json.load(file)
                 return [
                     Tweet(
-                        id=item[TWITTER_ARCHIVE_ID_FIELD], content=item[TWITTER_ARCHIVE_TEXT_FIELD]
+                        id=item["tweet"][TWITTER_ARCHIVE_ID_FIELD],
+                        content=item["tweet"][TWITTER_ARCHIVE_TEXT_FIELD],
                     )
                     for item in data
                 ]
@@ -53,7 +54,7 @@ class JSONParser(Parser):
         except KeyError as e:
             raise ValueError(
                 f"Missing required field {e} in {self.file_path}. "
-                f"Expected fields: {TWITTER_ARCHIVE_ID_FIELD}, {TWITTER_ARCHIVE_TEXT_FIELD}"
+                "Expected format: [{'tweet': {'id_str': '...', 'full_text': '...'}}]"
             ) from e
 
 

@@ -102,4 +102,4 @@ def load_settings() -> Settings:
     )
 
 
-settings = load_settings()
+settings: Settings = load_settings()

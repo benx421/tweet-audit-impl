@@ -34,7 +34,7 @@ def test_should_raise_error_when_json_file_invalid(testdata_dir):
 
 
 def test_should_raise_error_when_json_missing_required_fields(tmp_path):
-    incomplete_data = [{"id_str": "123"}]  # Missing full_text
+    incomplete_data = [{"tweet": {"id_str": "123"}}]  # Missing full_text
     file_path = tmp_path / "incomplete.json"
     with open(file_path, "w") as f:
         json.dump(incomplete_data, f)

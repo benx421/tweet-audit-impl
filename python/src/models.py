@@ -18,3 +18,16 @@ class AnalysisResult:
 
     def __repr__(self) -> str:
         return f"AnalysisResult(tweet_url={self.tweet_url!r}, should_delete={self.should_delete})"
+
+
+@dataclass(frozen=True)
+class ExtractionResult:
+    success: bool
+    count: int = 0
+    error_type: str = ""
+    error_message: str = ""
+
+    def __repr__(self) -> str:
+        if self.success:
+            return f"ExtractionResult(success=True, count={self.count})"
+        return f"ExtractionResult(success=False, error_type={self.error_type!r})"
