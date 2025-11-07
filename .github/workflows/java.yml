@@ -1,0 +1,109 @@
+name: Java CI
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - 'java/**'
+      - '.github/workflows/java.yml'
+  pull_request:
+    branches: [ master ]
+    paths:
+      - 'java/**'
+      - '.github/workflows/java.yml'
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-24.04
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 25
+      uses: actions/setup-java@v4
+      with:
+        java-version: '25'
+        distribution: 'oracle'
+
+    - name: Cache Maven packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('java/pom.xml') }}
+        restore-keys: |
+          ${{ runner.os }}-m2-
+
+    - name: Run tests with Maven
+      working-directory: ./java
+      run: mvn --batch-mode --update-snapshots clean test
+
+    - name: Generate coverage report
+      working-directory: ./java
+      run: mvn --batch-mode jacoco:report
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        files: ./java/target/site/jacoco/jacoco.xml
+        flags: java
+        fail_ci_if_error: false
+
+  build:
+    name: Build
+    runs-on: ubuntu-24.04
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 25
+      uses: actions/setup-java@v4
+      with:
+        java-version: '25'
+        distribution: 'oracle'
+
+    - name: Cache Maven packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('java/pom.xml') }}
+        restore-keys: |
+          ${{ runner.os }}-m2-
+
+    - name: Build with Maven
+      working-directory: ./java
+      run: mvn --batch-mode --update-snapshots clean package -DskipTests
+
+    - name: Verify JAR
+      working-directory: ./java
+      run: |
+        ls -lh target/tweet-audit.jar
+        java -jar target/tweet-audit.jar
+
+  checkstyle:
+    name: Code Style
+    runs-on: ubuntu-24.04
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 25
+      uses: actions/setup-java@v4
+      with:
+        java-version: '25'
+        distribution: 'oracle'
+
+    - name: Cache Maven packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('java/pom.xml') }}
+        restore-keys: |
+          ${{ runner.os }}-m2-
+
+    - name: Run Checkstyle
+      working-directory: ./java
+      run: mvn --batch-mode checkstyle:check
