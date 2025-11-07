@@ -4,7 +4,7 @@ import os
 
 import pytest
 
-from models import AnalysisResult, Tweet
+from models import AnalysisResult, Decision, Tweet
 from storage import Checkpoint, CSVParser, CSVWriter, JSONParser
 
 
@@ -194,8 +194,8 @@ def test_should_append_tweets_when_append_mode_enabled(tmp_path):
 def test_should_write_analysis_results_to_csv(tmp_path):
     output_path = tmp_path / "results.csv"
     results = [
-        AnalysisResult(tweet_url="https://twitter.com/u/s/1", should_delete=False),
-        AnalysisResult(tweet_url="https://twitter.com/u/s/2", should_delete=True),
+        AnalysisResult(tweet_url="https://twitter.com/u/s/1", decision=Decision.KEEP),
+        AnalysisResult(tweet_url="https://twitter.com/u/s/2", decision=Decision.DELETE),
     ]
 
     with CSVWriter(str(output_path)) as writer:

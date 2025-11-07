@@ -4,7 +4,7 @@ import pytest
 
 from analyzer import Gemini
 from config import Criteria
-from models import Tweet
+from models import Decision, Tweet
 
 
 def test_should_analyze_tweet_with_delete_decision(mock_settings):
@@ -20,7 +20,7 @@ def test_should_analyze_tweet_with_delete_decision(mock_settings):
 
         result = analyzer.analyze(tweet)
 
-        assert result.should_delete is True
+        assert result.decision == Decision.DELETE
         assert "123" in result.tweet_url
         assert "testuser" in result.tweet_url
 
@@ -38,7 +38,7 @@ def test_should_analyze_tweet_with_keep_decision(mock_settings):
 
         result = analyzer.analyze(tweet)
 
-        assert result.should_delete is False
+        assert result.decision == Decision.KEEP
         assert "456" in result.tweet_url
 
 

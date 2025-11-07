@@ -1,4 +1,12 @@
 from dataclasses import dataclass
+from enum import Enum
+
+
+class Decision(str, Enum):
+    """Tweet analysis decision."""
+
+    DELETE = "DELETE"
+    KEEP = "KEEP"
 
 
 @dataclass(frozen=True)
@@ -14,14 +22,14 @@ class Tweet:
 @dataclass(frozen=True)
 class AnalysisResult:
     tweet_url: str
-    should_delete: bool = False
+    decision: Decision = Decision.KEEP
 
     def __repr__(self) -> str:
-        return f"AnalysisResult(tweet_url={self.tweet_url!r}, should_delete={self.should_delete})"
+        return f"AnalysisResult(tweet_url={self.tweet_url!r}, decision={self.decision.value})"
 
 
 @dataclass(frozen=True)
-class ExtractionResult:
+class Result:
     success: bool
     count: int = 0
     error_type: str = ""
@@ -29,5 +37,5 @@ class ExtractionResult:
 
     def __repr__(self) -> str:
         if self.success:
-            return f"ExtractionResult(success=True, count={self.count})"
-        return f"ExtractionResult(success=False, error_type={self.error_type!r})"
+            return f"Result(success=True, count={self.count})"
+        return f"Result(success=False, error_type={self.error_type!r})"

@@ -5,7 +5,7 @@ from functools import wraps
 import google.generativeai as genai
 
 from config import settings
-from models import AnalysisResult, Tweet
+from models import AnalysisResult, Decision, Tweet
 
 
 def retry_with_backoff(max_retries: int = 3, initial_delay: float = 1.0):
@@ -83,13 +83,25 @@ class Gemini:
 
         try:
             data = json.loads(response.text)
-            should_delete = data["decision"].upper() == "DELETE"
-        except (json.JSONDecodeError, KeyError) as e:
+        except json.JSONDecodeError as e:
             raise ValueError(
                 f"Invalid Gemini response for tweet {tweet.id}: {e} (response: {response.text})"
             ) from e
 
-        return AnalysisResult(tweet_url=settings.tweet_url(tweet.id), should_delete=should_delete)
+        try:
+            decision = Decision(data["decision"].upper())
+        except KeyError as e:
+            raise ValueError(
+                f"Missing decision field in Gemini response for tweet {tweet.id}: {e} "
+                f"(response: {response.text})"
+            ) from e
+        except ValueError as e:
+            raise ValueError(
+                f"Invalid decision value from Gemini for tweet {tweet.id}: {e} "
+                f"(response: {response.text})"
+            ) from e
+
+        return AnalysisResult(tweet_url=settings.tweet_url(tweet.id), decision=decision)
 
     def _build_prompt(self, tweet: Tweet) -> str:
         criteria_parts = []
