@@ -2,7 +2,7 @@ import logging
 
 from analyzer import Gemini
 from config import settings
-from models import Result
+from models import Decision, Result
 from storage import Checkpoint, CSVParser, CSVWriter, JSONParser
 
 logger = logging.getLogger(__name__)
@@ -94,9 +94,11 @@ class Application:
                         for tweet in batch:
                             try:
                                 result = self.analyzer.analyze(tweet)
-                                writer.write_result(result)
                                 logger.debug(f"Tweet {tweet.id}: {result.decision.value}")
                                 analyzed_count += 1
+
+                                if result.decision == Decision.DELETE:
+                                    writer.write_result(result)
                             except Exception as e:
                                 logger.error(
                                     f"Failed to analyze tweet {tweet.id}: {e}", exc_info=True

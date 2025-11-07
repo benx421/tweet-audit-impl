@@ -3,7 +3,7 @@ import json
 import os
 from abc import ABC, abstractmethod
 
-from models import AnalysisResult, Decision, Tweet
+from models import AnalysisResult, Tweet
 
 PRIVATE_FILE_MODE = 0o600  # Owner read/write only
 PRIVATE_DIR_MODE = 0o750  # Owner read/write/execute, group read/execute
@@ -177,6 +177,5 @@ class CSVWriter:
             self.writer.writerow([RESULT_CSV_URL_COLUMN, RESULT_CSV_DELETED_COLUMN])
             self.header_written = True
 
-        deleted = CSV_BOOL_TRUE if result.decision == Decision.DELETE else CSV_BOOL_FALSE
-        self.writer.writerow([result.tweet_url, deleted])
+        self.writer.writerow([result.tweet_url, CSV_BOOL_FALSE])
         self.file.flush()

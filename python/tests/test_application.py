@@ -131,7 +131,7 @@ def test_should_analyze_tweets_successfully_with_batch_processing(
     mock_parser_class.assert_called_once_with("data/tweets.csv")
     mock_parser.parse.assert_called_once()
     assert mock_analyzer.analyze.call_count == 3
-    assert mock_writer.write_result.call_count == 3
+    assert mock_writer.write_result.call_count == 2  # Only DELETE results written
     assert mock_checkpoint.save.call_count == 2
     mock_checkpoint.save.assert_has_calls([call(2), call(3)])
 

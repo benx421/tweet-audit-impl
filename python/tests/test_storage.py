@@ -194,7 +194,7 @@ def test_should_append_tweets_when_append_mode_enabled(tmp_path):
 def test_should_write_analysis_results_to_csv(tmp_path):
     output_path = tmp_path / "results.csv"
     results = [
-        AnalysisResult(tweet_url="https://twitter.com/u/s/1", decision=Decision.KEEP),
+        AnalysisResult(tweet_url="https://twitter.com/u/s/1", decision=Decision.DELETE),
         AnalysisResult(tweet_url="https://twitter.com/u/s/2", decision=Decision.DELETE),
     ]
 
@@ -208,7 +208,7 @@ def test_should_write_analysis_results_to_csv(tmp_path):
 
     assert rows[0] == ["tweet_url", "deleted"]
     assert rows[1] == ["https://twitter.com/u/s/1", "false"]
-    assert rows[2] == ["https://twitter.com/u/s/2", "true"]
+    assert rows[2] == ["https://twitter.com/u/s/2", "false"]
 
 
 def test_should_create_directory_when_csv_path_nested(tmp_path):
