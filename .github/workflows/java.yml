@@ -39,17 +39,6 @@ jobs:
       working-directory: ./java
       run: mvn --batch-mode --update-snapshots clean test
 
-    - name: Generate coverage report
-      working-directory: ./java
-      run: mvn --batch-mode jacoco:report
-
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v4
-      with:
-        files: ./java/target/site/jacoco/jacoco.xml
-        flags: java
-        fail_ci_if_error: false
-
   build:
     name: Build
     runs-on: ubuntu-24.04

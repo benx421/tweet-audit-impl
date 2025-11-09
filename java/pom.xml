@@ -32,7 +32,6 @@
         <maven-surefire-plugin.version>3.5.2</maven-surefire-plugin.version>
         <maven-shade-plugin.version>3.6.0</maven-shade-plugin.version>
         <maven-jar-plugin.version>3.4.2</maven-jar-plugin.version>
-        <jacoco-maven-plugin.version>0.8.12</jacoco-maven-plugin.version>
         <maven-checkstyle-plugin.version>3.5.0</maven-checkstyle-plugin.version>
         <checkstyle.version>10.20.2</checkstyle.version>
         <spotless-maven-plugin.version>2.43.0</spotless-maven-plugin.version>
@@ -140,27 +139,6 @@
                                 </filter>
                             </filters>
                         </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <!-- JaCoCo Plugin for code coverage -->
-            <plugin>
-                <groupId>org.jacoco</groupId>
-                <artifactId>jacoco-maven-plugin</artifactId>
-                <version>${jacoco-maven-plugin.version}</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>prepare-agent</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>report</id>
-                        <phase>test</phase>
-                        <goals>
-                            <goal>report</goal>
-                        </goals>
                     </execution>
                 </executions>
             </plugin>
