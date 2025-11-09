@@ -1,8 +1,8 @@
 package com.benx421.tweetaudit.storage;
 
-import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.Reader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -12,6 +12,10 @@ import com.benx421.tweetaudit.models.Tweet;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.annotations.SerializedName;
+
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
 
 /**
  * Parses Twitter archive files into Tweet objects.
@@ -42,7 +46,7 @@ public final class TweetParser {
   }
 
   private List<Tweet> parseJson() throws IOException {
-    try (BufferedReader reader = new BufferedReader(new FileReader(path.toFile()))) {
+    try (Reader reader = new FileReader(path.toFile())) {
       TweetWrapper[] wrappers = gson.fromJson(reader, TweetWrapper[].class);
 
       if (wrappers == null) {
@@ -68,62 +72,32 @@ public final class TweetParser {
   }
 
   private List<Tweet> parseCsv() throws IOException {
-    List<Tweet> tweets = new ArrayList<>(1024);
+    try (Reader reader = new FileReader(path.toFile());
+        CSVParser parser = new CSVParser(reader, CSVFormat.RFC4180.withFirstRecordAsHeader())) {
 
-    try (BufferedReader reader = new BufferedReader(new FileReader(path.toFile()))) {
-      String headerLine = reader.readLine();
-      if (headerLine == null) {
+      // Validate headers
+      if (parser.getHeaderNames().isEmpty()) {
         throw new IOException("CSV file is empty");
       }
-
-      String[] headers = parseCsvLine(headerLine);
-      if (headers.length < 2 || !headers[0].equals("id") || !headers[1].equals("text")) {
+      if (!parser.getHeaderNames().equals(List.of("id", "text"))) {
         throw new IOException("Invalid CSV format: expected 'id,text' headers");
       }
 
-      int lineNum = 2;
-      String line;
-      while ((line = reader.readLine()) != null) {
-        String[] fields = parseCsvLine(line);
-
-        if (fields.length != 2) {
+      List<Tweet> tweets = new ArrayList<>(1024);
+      for (CSVRecord record : parser) {
+        if (record.size() != 2) {
           throw new IOException(
-              "Invalid CSV record at line " + lineNum + ": expected 2 fields, got " + fields.length);
+              "Invalid CSV record at line "
+                  + record.getRecordNumber()
+                  + ": expected 2 fields, got "
+                  + record.size());
         }
 
-        tweets.add(new Tweet(fields[0], fields[1]));
-        lineNum++;
+        tweets.add(new Tweet(record.get("id"), record.get("text")));
       }
+
+      return tweets;
     }
-
-    return tweets;
-  }
-
-  private String[] parseCsvLine(String line) {
-    List<String> fields = new ArrayList<>();
-    StringBuilder field = new StringBuilder(300);
-    boolean inQuotes = false;
-
-    for (int i = 0; i < line.length(); i++) {
-      char c = line.charAt(i);
-
-      if (c == '"') {
-        if (inQuotes && i + 1 < line.length() && line.charAt(i + 1) == '"') {
-          field.append('"');
-          i++;
-        } else {
-          inQuotes = !inQuotes;
-        }
-      } else if (c == ',' && !inQuotes) {
-        fields.add(field.toString());
-        field.setLength(0);
-      } else {
-        field.append(c);
-      }
-    }
-    fields.add(field.toString());
-
-    return fields.toArray(new String[0]);
   }
 
   private static final class TweetWrapper {

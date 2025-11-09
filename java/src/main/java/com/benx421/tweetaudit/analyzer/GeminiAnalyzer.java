@@ -3,6 +3,7 @@ package com.benx421.tweetaudit.analyzer;
 import java.time.Duration;
 
 import com.benx421.tweetaudit.config.Criteria;
+import com.benx421.tweetaudit.config.Settings;
 import com.benx421.tweetaudit.models.AnalysisResult;
 import com.benx421.tweetaudit.models.Decision;
 import com.benx421.tweetaudit.models.Tweet;
@@ -41,6 +42,23 @@ public class GeminiAnalyzer implements TweetAnalyzer {
       GeminiClient client, Criteria criteria, String username) {
     return new GeminiAnalyzer(
         client, criteria, username, "https://x.com", Duration.ofSeconds(1));
+  }
+
+  /**
+   * Creates a GeminiAnalyzer from Settings with real Gemini SDK client.
+   *
+   * @param settings the application settings
+   * @return a new GeminiAnalyzer instance
+   */
+  public static GeminiAnalyzer fromSettings(Settings settings) {
+    GeminiClient client = new GeminiSdkClient(settings.geminiApiKey(), settings.geminiModel());
+
+    return new GeminiAnalyzer(
+        client,
+        settings.criteria(),
+        settings.username(),
+        settings.baseTwitterUrl(),
+        settings.rateLimitDelay());
   }
 
   @Override

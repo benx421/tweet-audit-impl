@@ -73,11 +73,8 @@ public final class ConfigLoader {
           configFile.criteria.toneRequirements != null ? configFile.criteria.toneRequirements : List.of(),
           configFile.criteria.additionalInstructions != null ? configFile.criteria.additionalInstructions : "");
 
-    } catch (IOException e) {
-      System.err.println("Warning: Could not read config file '" + filePath + "': " + e.getMessage());
-      return null;
-    } catch (JsonSyntaxException e) {
-      System.err.println("Warning: Invalid JSON in config file '" + filePath + "': " + e.getMessage());
+    } catch (IOException | JsonSyntaxException e) {
+      // Config file is optional. Silently fall back to defaults if not found or invalid
       return null;
     }
   }

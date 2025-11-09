@@ -20,7 +20,7 @@ class SettingsTest {
     assertEquals("https://x.com", settings.baseTwitterUrl());
     assertEquals("user", settings.username());
     assertEquals("", settings.geminiApiKey());
-    assertEquals("gemini-2.0-flash-exp", settings.geminiModel());
+    assertEquals("gemini-2.5-flash", settings.geminiModel());
     assertEquals(10, settings.batchSize());
     assertEquals(Duration.ofSeconds(1), settings.rateLimitDelay());
     assertEquals(Criteria.defaults(), settings.criteria());

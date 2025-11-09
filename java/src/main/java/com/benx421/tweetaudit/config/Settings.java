@@ -93,7 +93,7 @@ public final class Settings {
     private String baseTwitterUrl = "https://x.com";
     private String username = "user";
     private String geminiApiKey = "";
-    private String geminiModel = "gemini-2.0-flash-exp";
+    private String geminiModel = "gemini-2.5-flash";
     private int batchSize = 10;
     private Duration rateLimitDelay = Duration.ofSeconds(1);
     private Criteria criteria = Criteria.defaults();
