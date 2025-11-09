@@ -1,16 +1,14 @@
 package com.benx421.tweetaudit;
 
 /**
- * Analyze Twitter archives using AI to identify tweets for deletion.
- *
- * <p>Main entry point for the application.
+ * Main entry point for the Tweet Audit application.
  */
-public class Main {
-  /**
-   * Main entry point.
-   *
-   * @param args command line arguments
-   */
+public final class Main {
+
+  private Main() {
+
+  }
+
   public static void main(String[] args) {
     System.out.println("Welcome to Tweet Audit");
   }

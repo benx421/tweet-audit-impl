@@ -20,11 +20,20 @@ java -jar target/tweet-audit.jar
 ## Development
 
 ```bash
-# Test
+# Run tests
 mvn test
 
-# Code style check
+# Format code
+mvn spotless:apply
+
+# Check formatting
+mvn spotless:check
+
+# Check code style
 mvn checkstyle:check
+
+# Full build with all checks
+mvn clean verify
 ```
 
 ## License

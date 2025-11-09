@@ -82,8 +82,8 @@ jobs:
         ls -lh target/tweet-audit.jar
         java -jar target/tweet-audit.jar
 
-  checkstyle:
-    name: Code Style
+  format-and-style:
+    name: Format & Style
     runs-on: ubuntu-24.04
 
     steps:
@@ -104,6 +104,10 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-m2-
 
-    - name: Run Checkstyle
+    - name: Check code formatting
+      working-directory: ./java
+      run: mvn --batch-mode spotless:check
+
+    - name: Check code style
       working-directory: ./java
       run: mvn --batch-mode checkstyle:check
