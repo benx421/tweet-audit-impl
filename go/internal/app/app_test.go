@@ -346,3 +346,72 @@ func TestAnalyzeTweets_ErrorDuringAnalysis(t *testing.T) {
 		t.Error("Checkpoint should not exist when analysis fails")
 	}
 }
+
+func TestAnalyzeTweets_SkipsRetweets(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	csvPath := filepath.Join(tmpDir, "tweets.csv")
+	csvContent := "id,text\n123,RT @someone This is a retweet\n456,This is an original tweet\n789,RT @another Another retweet\n"
+	if err := os.WriteFile(csvPath, []byte(csvContent), 0o600); err != nil {
+		t.Fatalf("failed to create test CSV: %v", err)
+	}
+
+	checkpointPath := filepath.Join(tmpDir, "checkpoint.txt")
+	resultsPath := filepath.Join(tmpDir, "results.csv")
+
+	cfg := &config.Settings{
+		TransformedTweetsPath: csvPath,
+		CheckpointPath:        checkpointPath,
+		ProcessedResultsPath:  resultsPath,
+		BaseTwitterURL:        "https://x.com",
+		XUsername:             "testuser",
+		BatchSize:             10,
+	}
+
+	var processedIDs []string
+	mockAnalyzer := &mockAnalyzer{
+		analyzeFunc: func(ctx context.Context, tweet *models.Tweet) (models.AnalysisResult, error) {
+			processedIDs = append(processedIDs, tweet.ID)
+			return models.AnalysisResult{
+				TweetID:      tweet.ID,
+				TweetURL:     "https://x.com/testuser/status/" + tweet.ID,
+				ShouldDelete: true,
+			}, nil
+		},
+	}
+
+	app := setupTestApp(t, cfg, mockAnalyzer)
+	app.gemini = mockAnalyzer
+
+	if err := app.AnalyzeTweets(); err != nil {
+		t.Fatalf("AnalyzeTweets() failed: %v", err)
+	}
+
+	// Should only analyze the non-retweet (tweet 456)
+	if len(processedIDs) != 1 {
+		t.Fatalf("Expected 1 tweet analyzed, got %d", len(processedIDs))
+	}
+	if processedIDs[0] != "456" {
+		t.Errorf("Expected ID 456, got %s", processedIDs[0])
+	}
+
+	resultsData, err := os.ReadFile(resultsPath)
+	if err != nil {
+		t.Fatalf("failed to read results: %v", err)
+	}
+	resultsStr := string(resultsData)
+	if !strings.Contains(resultsStr, "456") {
+		t.Error("Results CSV should contain original tweet ID 456")
+	}
+	if strings.Contains(resultsStr, "123") || strings.Contains(resultsStr, "789") {
+		t.Error("Results CSV should not contain retweet IDs 123 or 789")
+	}
+
+	checkpointData, err := os.ReadFile(checkpointPath)
+	if err != nil {
+		t.Fatalf("failed to read checkpoint: %v", err)
+	}
+	if string(checkpointData) != "3" {
+		t.Errorf("Expected checkpoint value '3', got '%s'", string(checkpointData))
+	}
+}

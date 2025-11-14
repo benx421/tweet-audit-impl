@@ -239,3 +239,48 @@ def test_should_return_error_when_analyzer_fails(
     assert result.error_type == "analysis_failed"
     assert "API error" in result.error_message
     mock_checkpoint.save.assert_not_called()
+
+
+@patch("application.settings")
+@patch("application.CSVParser")
+@patch("application.Checkpoint")
+@patch("application.CSVWriter")
+def test_should_skip_retweets_during_analysis(
+    mock_writer_class, mock_checkpoint_class, mock_parser_class, mock_settings
+):
+    mock_settings.transformed_tweets_path = "data/tweets.csv"
+    mock_settings.checkpoint_path = "data/checkpoint.txt"
+    mock_settings.processed_results_path = "data/results.csv"
+    mock_settings.batch_size = 10
+
+    tweets = [
+        Tweet(id="1", content="RT @someone This is a retweet"),
+        Tweet(id="2", content="This is an original tweet"),
+        Tweet(id="3", content="RT @another Another retweet"),
+    ]
+    mock_parser = Mock()
+    mock_parser.parse.return_value = tweets
+    mock_parser_class.return_value = mock_parser
+
+    mock_checkpoint = MagicMock()
+    mock_checkpoint.load.return_value = 0
+    mock_checkpoint_class.return_value.__enter__.return_value = mock_checkpoint
+
+    mock_writer = MagicMock()
+    mock_writer_class.return_value.__enter__.return_value = mock_writer
+
+    mock_analyzer = Mock()
+    mock_analyzer.analyze.return_value = AnalysisResult(tweet_url="url2", decision=Decision.DELETE)
+
+    app = Application()
+    app._analyzer = mock_analyzer
+
+    result = app.analyze_tweets()
+
+    # Should only analyze the non-retweet (tweet 2)
+    assert result.success is True
+    assert result.count == 1
+    assert mock_analyzer.analyze.call_count == 1
+    mock_analyzer.analyze.assert_called_once_with(tweets[1])
+    mock_writer.write_result.assert_called_once()
+    mock_checkpoint.save.assert_called_once_with(3)

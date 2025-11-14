@@ -107,6 +107,10 @@ func (a *Application) AnalyzeTweets() error {
 	ctx := context.Background()
 
 	for i := startIdx; i < endIdx; i++ {
+		if isRetweet(&tweets[i]) {
+			continue
+		}
+
 		result, err := a.gemini.Analyze(ctx, &tweets[i])
 		if err != nil {
 			return fmt.Errorf("failed to analyze tweet %s: %w", tweets[i].ID, err)
@@ -138,4 +142,9 @@ func (a *Application) parseTransformedTweets() ([]models.Tweet, error) {
 	}
 
 	return parser.Parse()
+}
+
+// isRetweet checks if a tweet is a retweet by looking for "RT @" prefix.
+func isRetweet(tweet *models.Tweet) bool {
+	return len(tweet.Text) >= 4 && tweet.Text[:4] == "RT @"
 }

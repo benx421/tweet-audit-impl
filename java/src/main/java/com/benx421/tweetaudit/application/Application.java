@@ -147,6 +147,11 @@ public final class Application {
     try (CSVWriter writer = CSVWriter.create(settings.processedResultsPath(), true)) {
       for (int i = startIdx; i < endIdx; i++) {
         Tweet tweet = tweets.get(i);
+
+        if (isRetweet(tweet)) {
+          continue;
+        }
+
         AnalysisResult result;
         try {
           result = analyzer.analyze(tweet);
@@ -188,5 +193,16 @@ public final class Application {
   private List<Tweet> parseTransformedTweets() throws IOException {
     TweetParser parser = new TweetParser(settings.transformedTweetsPath(), ParserType.CSV);
     return parser.parse();
+  }
+
+  /**
+   * Checks if a tweet is a retweet by looking for "RT @" prefix.
+   *
+   * @param tweet the tweet to check
+   * @return true if the tweet is a retweet, false otherwise
+   */
+  private static boolean isRetweet(Tweet tweet) {
+    String content = tweet.content();
+    return content != null && content.startsWith("RT @");
   }
 }

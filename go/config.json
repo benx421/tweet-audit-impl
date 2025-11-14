@@ -1,0 +1,16 @@
+{
+  "criteria": {
+    "forbidden_words": [],
+    "topics_to_exclude": [
+      "Explicit profanity or vulgar language",
+      "Direct personal attacks targeting individuals by name",
+      "Discriminatory content (racism, sexism, homophobia)",
+      "Misinformation or conspiracy theories"
+    ],
+    "tone_requirements": [
+      "No threatening or harassing language",
+      "No sexually explicit content"
+    ],
+    "additional_instructions": "Only flag tweets with CLEAR and OBVIOUS professional reputation damage. Be conservative. When in doubt, mark as KEEP. Technical disagreements, casual language, and professional opinions should NOT be flagged."
+  }
+}

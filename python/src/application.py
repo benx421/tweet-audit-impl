@@ -92,6 +92,9 @@ class Application:
                         )
 
                         for tweet in batch:
+                            if _is_retweet(tweet):
+                                continue
+
                             try:
                                 result = self.analyzer.analyze(tweet)
                                 logger.debug(f"Tweet {tweet.id}: {result.decision.value}")
@@ -117,3 +120,7 @@ class Application:
             return Result(success=True, count=analyzed_count)
         except Exception as e:
             return self._build_error_result(e, context="analysis")
+
+
+def _is_retweet(tweet) -> bool:
+    return tweet.content.startswith("RT @")

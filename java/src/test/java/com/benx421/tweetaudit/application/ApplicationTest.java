@@ -172,6 +172,48 @@ class ApplicationTest {
   }
 
   @Test
+  void testAnalyzeTweetsSkipsRetweets(@TempDir Path tempDir) throws IOException {
+    Path tweetsPath = tempDir.resolve("tweets.csv");
+    Path resultsPath = tempDir.resolve("results.csv");
+    Path checkpointPath = tempDir.resolve("checkpoint.txt");
+
+    Files.writeString(
+        tweetsPath,
+        """
+        id,text
+        123,RT @someone This is a retweet
+        456,This is an original tweet
+        789,RT @another Another retweet
+        """);
+
+    Settings settings =
+        Settings.builder()
+            .geminiApiKey("fake-api-key")
+            .tweetsArchivePath(tempDir.resolve("archive.json").toString())
+            .transformedTweetsPath(tweetsPath.toString())
+            .processedResultsPath(resultsPath.toString())
+            .checkpointPath(checkpointPath.toString())
+            .batchSize(10)
+            .criteria(Criteria.defaults())
+            .build();
+
+    List<AnalysisResult> mockResults = new ArrayList<>();
+    mockResults.add(new AnalysisResult("https://x.com/user/status/456", Decision.DELETE));
+
+    MockAnalyzer mockAnalyzer = new MockAnalyzer(mockResults);
+    Application app = new Application(settings, mockAnalyzer);
+    app.analyzeTweets();
+
+    // Should only analyze the non-retweet (tweet 456)
+    assertEquals(1, mockAnalyzer.getAnalyzeCount());
+
+    List<String> lines = Files.readAllLines(resultsPath);
+    assertEquals(2, lines.size());
+    assertEquals("tweet_url,deleted", lines.get(0));
+    assertEquals("https://x.com/user/status/456,false", lines.get(1));
+  }
+
+  @Test
   void testConstructorValidation() {
     assertThrows(IllegalArgumentException.class, () -> new Application(null));
 
